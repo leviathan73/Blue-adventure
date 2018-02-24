@@ -162,11 +162,11 @@ function aiming:place(px,py)
 		self.on = true
 	end
 end
-function aiming:logic()
+function aiming:logic(px,py)
 	if self.active and btnp(❎) then 
-		if ball.x<self.ylim then
+		if py<self.ylim then
 			if not self.on then
-				self:place(ball.x,ball.y)
+				self:place(px,py)
 				sfx(5)
 			else
 				self:reset()
@@ -227,7 +227,7 @@ lvlnames={
 function game:init()
 	aiming:reset()
 	ball:reset()
-	ball:moveto(60,60)
+	ball:moveto(100,100)
 	player:reset()
 	--game:load(0)
 end
@@ -240,8 +240,8 @@ function game:draw()
 	-- balls:draw()
 	-- aiming:draw()
 	-- powerups:drawstate()
-	player:draw()
-	-- debug()
+	-- player:draw()
+	 debug()
 end
 
 function game:load(ilevel)
@@ -274,22 +274,30 @@ function game:update()
 	end
 
 	player:logic()
+	
+	if btnp(4) then 
+		if	sitcky then
+			sitcky = false 
+			dx=sdir
+			dy=-1
+		end
+	end
 
 	ball:logic()
-
+	--player_col()
+	--map_col()
 	--game:checklevel()
-	aiming:logic()
+	aiming:logic(x,y)
 	shots:logic()
 	mballs:logic()
 end
 
 zam = false
 mtime = 0
+sdir = 1
 hflip = false
 tno = 0
 --#ereg
-
-
 --#reg ball
 ball = {
 	x=0,
@@ -300,8 +308,8 @@ ball = {
 	cmy=0,
 	dx=1,
 	dy=-1,
-	size = 5,
-	active = true
+	sticky=false,
+	size = 6
 }
 function ball:moveto(px,py)
 	self.x = px
@@ -313,7 +321,7 @@ function ball:move()
 	self.x += self.dx
 	self.y += self.dy
 	self.mx = flr(self.x/8)
-	self.my = 16+flr(self.y/8)
+	self.my = flr(self.y/8)
 end
 function ball:reset()
 	self.x=0
@@ -322,14 +330,17 @@ function ball:reset()
 	self.my=0
 	self.dx=1
 	self.dy=-1
-	self.sticky=true
+	self.sticky=false
 end
 function ball:logic()
-	if self.active then
-		if self:collision() then 
-			--board.removetile(self.cmx,self.cmx)
-		end
+	if self.sticky then
+		if(sdir!=mtime and mtime!=0) sdir=mtime
+ 		self:moveto(player.x + 10 + sdir*3,player.y - 9)
+	else
 		self:move()
+	end
+	if self:collision() then 
+		board.removetile(self.cmx,self.cmx)
 	end
 end
 
@@ -338,10 +349,11 @@ function ball:draw()
 	if (self.y>aiming.ylim or not aiming.active) sn=1
 	spr(sn,self.x,self.y)
 end
+
 function ball:collision()
 	local bcol = false
-	self.cmx = flr((self.x+self.size/2)/8)
-	self.cmy = 16+flr((self.y)/8)
+	self.cmx = (self.x+self.size/2)/8
+	self.cmy = self.y/8
 	local sn = mget(self.cmx,self.cmy)
 	local fn = fget(sn,0)
 	bcol = bcol or (fn and (sn!=0))
@@ -350,8 +362,8 @@ function ball:collision()
 		return true
 	end
 
-	self.cmx = flr((self.x+self.size/2)/8)
-	self.cmy = 16+flr((self.y+self.size)/8)
+	self.cmx = (self.x+self.size/2)/8
+	self.cmy = 16+(self.y+self.size)/8
 	sn = mget(self.cmx,self.cmy)
 	fn = fget(sn,0)
 	bcol = bcol or (fn and (sn!=0))
@@ -360,8 +372,8 @@ function ball:collision()
 		return true
 	end
 
-	self.cmx = flr((self.x)/8)
-	self.cmy = 16+flr((self.y+self.size/2)/8)
+	self.cmx = self.x/8
+	self.cmy = 16+(self.y+self.size/2)/8
 	local sn = mget(self.cmx,self.cmy)
 	local fn = fget(sn,0)
 	bcol = bcol or (fn and (sn!=0))
@@ -370,8 +382,8 @@ function ball:collision()
 		return true
 	end
 
-	self.cmx = flr((self.x+self.size)/8)
-	self.cmy = 16+flr((self.y+self.size/2)/8)
+	self.cmx = self.x+self.size/8
+	self.cmy = 16+(self.y+self.size/2)/8
 	sn = mget(self.cmx,self.cmy)
 	fn = fget(sn,0)
 	bcol = bcol or (fn and (sn!=0))
@@ -379,10 +391,9 @@ function ball:collision()
 		self.dx*=-1
 		return true
 	end
- 	return false 
+ 	return bcol 
 end
 --#ereg
-
 --#reg player
 player = {
 	x=6*8,
@@ -393,8 +404,7 @@ player = {
 	lives = 5,
 	maxlives = 5,
 	sitcky = true,
-	score = 0,
-	bdirect = 1
+	score = 0
 	}
 function player:reset()
 	self.x=6*8
@@ -414,7 +424,7 @@ function player:move()
 	self.my = flr(self.y/8)
 end
 function player:draw()
-	player:drawplayer()
+	player:drawanimation()
 	player:drawstats()
 end
 function player:drawstats()
@@ -424,72 +434,59 @@ function player:drawstats()
 		if (i>self.lives-1) spr(6,i+1,3) else spr(3,i+1,3)
 	end
  	-- draw score
-	local lx = 124-6*4
+	local lx = 128-6*4
 	local stxt = sub("000000" .. self.score,-6)
-	print(stxt,lx,4,6)
+	rectfill(lx-1,3,lx+24,10,0) 
+	print(stxt,lx,5,13)
 end
-function player:drawplayer()
-	if(self.x<1*8) self.x=1*8
-	if(self.x>12*8) self.x=12*8
+function player:animation()
+	if(xpa<1*8) xpa=1*8
+	if(xpa>12*8) xpa=12*8
 	local shift = {0,0,0,1,1,1,1,2,2,2,3,3,3,3,2,2,2,1,1,1,1,0,0,0}
 	for g=1,24 do
 		local oy = 0
-		local dist = self.y-ball.y-7 
-		if (ball.x>self.x and ball.x<self.x+24 and not ball.sticky) oy = shift[g]-dist 
-			pset(self.x+g,self.y+max(0,oy)-3,13)
-			if (g>2 and g<22) pset(self.x+g,self.y+max(0,oy)-2,7)
+		local dist = ypa-y-7 
+		if (x>xpa and x<xpa+24 and not sitcky) oy = shift[g]-dist 
+			pset(xpa+g,ypa+max(0,oy)-3,13)
+			if (g>2 and g<22) pset(xpa+g,ypa+max(0,oy)-2,7)
 	end
-	spr(80,self.x-4,self.y,4,2)
+	spr(80,xpa-4,ypa,4,2)
 	if mtime == 0 then
-		spr(64+hanim%8,self.x-1,self.y-1,1,1,false)	
-		spr(64+hanim%8,self.x+20,self.y-1,1,1,false)
+		spr(64+hanim%8,xpa-1,ypa-1,1,1,false)	
+		spr(64+hanim%8,xpa+20,ypa-1,1,1,false)
 	elseif mtime==1 then
  		if(hanim<=7) then
- 			spr(64+hanim%8,self.x+20,self.y-1,1,1,hflip)
- 			spr(64,self.x-3,self.y-1,1,1,hflip)	
+ 			spr(64+hanim%8,xpa+20,ypa-1,1,1,hflip)
+ 			spr(64,xpa-3,ypa-1,1,1,hflip)	
  		else
- 			spr(64+hanim%8,self.x-3,self.y-1,1,1,hflip)
- 			spr(64,self.x+20,self.y-1,1,1,hflip)
+ 			spr(64+hanim%8,xpa-3,ypa-1,1,1,hflip)
+ 			spr(64,xpa+20,ypa-1,1,1,hflip)
 		end
   	elseif mtime==-1 then
  		if(hanim<=7) then
- 			spr(64+hanim%8,self.x-4,self.y-1,1,1,hflip)
- 			spr(64,self.x+20,self.y-1,1,1,hflip)
+ 			spr(64+hanim%8,xpa-4,ypa-1,1,1,hflip)
+ 			spr(64,xpa+20,ypa-1,1,1,hflip)
  		else
- 			spr(64+hanim%8,self.x+20,self.y-1,1,1,hflip)
- 			spr(64,self.x-4,self.y-1,1,1,hflip)	
+ 			spr(64+hanim%8,xpa+20,ypa-1,1,1,hflip)
+ 			spr(64,xpa-4,ypa-1,1,1,hflip)	
  		end
 	end
 end
 function player:logic()
-	if btnp(4) then 
-		if	player.sticky then
-			player.sticky = false 
-			ball.dx=player.bdirect
-			ball.dy=-1
-		end
-	end
-
-	if btn(2️) then 
+	if btn(⬅️) then 
 		mtime=-1
 		hanim+=1
 		hflip = true
 		if(hanim>=16) hanim=0
-		if (self.x>5) self.x-=2 
+		if (xpa>5) xpa-=2 
 	end
 
-	if btn(3) then 
+	if btn(➡️) then 
 		mtime=1
 		hanim+=1
 		hflip = false
 		if(hanim>=16) hanim=0
-		if(self.x<102) self.x+=2 
-	end
-	
-	ball.active = not self.sticky
-	if self.sticky then
-		if(player.bdirect!=mtime and mtime!=0) player.bdirect=mtime
- 		ball:moveto(player.x+10+player.bdirect*3,player.y-9)
+		if(xpa<102) xpa+=2 
 	end
 end
 --#ereg
@@ -765,20 +762,20 @@ function mballs:draw()
 	end
 end
 __gfx__
-000000000d2200000d2200000070700002220000066600000020200000a000000077777777777700077777700777777777777770077777777777777007777770
-00000000d7d1d000d711d000079796002711d00067aa9000021212000000000007eeeeeeeeeeee70788878867888887887887886788888888888888678888886
-007007002d11d00021a1d000798989602111d0006aaa900021010120a0a0a0007e7eeeeeeeeee786788788767888878878878886788788888888888678788886
-000770002111d0002111d000788888602111d0006aaa900020000020000000007ee7777777777886787887867888788788788886787888888888868678888886
-000770000ddd00000ddd0000078886000ddd0000099900000200020000a000007e78888888888686778878867887887887888886788888888888688678888686
-00700700000000000000000000686000000000000000000000202000000000000788888888888860788788867878878878888886788888888888888678888886
-00000000000000000000000000060000000000000000000000020000000000000066666666666600066666600666666666666660066666666666666006666660
+00000000000000000000000000707000000000000000000000202000000a00000077777777777700077777700777777777777770077777777777777007777770
+0000000000d2200000d2200007979600002220000066600002121200000a000007eeeeeeeeeeee70788878867888887887887886788888888888888678888886
+007007000d7d1d000d711d007989896002711d00067aa90021010120000000007e7eeeeeeeeee786788788767888878878878886788788888888888678788886
+0007700002d11d00021a1d007888886002111d0006aaa90020000020aa0a0aa07ee7777777777886787887867888788788788886787888888888868678888886
+0007700002111d0002111d000788860002111d0006aaa90002000200000000007e78888888888686778878867887887887888886788888888888688678888686
+0070070000ddd00000ddd0000068600000ddd0000099900000202000000a00000788888888888860788788867878878878888886788888888888888678888886
+00000000000000000000000000060000000000000000000000020000000a00000066666666666600066666600666666666666660066666666666666006666660
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0000000000a000000010000000200000000000000777777777777770077777700077777777777700077777700777777777777770077777777777777007777770
-0000000000000000000000100000002000000000766666666666666d7666666d07eeeeeeeeeeee707ccc7cc67ccccc7cc7cc7cc67cccccccccccccc67cccccc6
-00000000a0a0a000000000000020000000000000766766666666666d7676666d7e7eeeeeeeeee7c67cc7cc767cccc7cc7cc7ccc67cc7ccccccccccc67c7cccc6
-00000000000000001000000020002000000000007676666666666d6d7666666d7ee7777777777cc67c7cc7c67ccc7cc7cc7cccc67c7cccccccccc6c67cccccc6
-0000000000a00000000000000000002000000000766666666666d66d76666d6d7e7cccccccccc6c677cc7cc67cc7cc7cc7ccccc67ccccccccccc6cc67cccc6c6
-0000000000000000000100000002000000000000766666666666666d7666666d07cccccccccccc607cc7ccc67c7cc7cc7cccccc67cccccccccccccc67cccccc6
+00000000000000000010000000200000000000000777777777777770077777700077777777777700077777700777777777777770077777777777777007777770
+0000000000a00000000000100000002000000000766666666666666d7666666d07eeeeeeeeeeee707ccc7cc67ccccc7cc7cc7cc67cccccccccccccc67cccccc6
+0000000000000000000000000020000000000000766766666666666d7676666d7e7eeeeeeeeee7c67cc7cc767cccc7cc7cc7ccc67cc7ccccccccccc67c7cccc6
+00000000a0a0a0001000000020002000000000007676666666666d6d7666666d7ee7777777777cc67c7cc7c67ccc7cc7cc7cccc67c7cccccccccc6c67cccccc6
+0000000000000000000000000000002000000000766666666666d66d76666d6d7e7cccccccccc6c677cc7cc67cc7cc7cc7ccccc67ccccccccccc6cc67cccc6c6
+0000000000a00000000100000002000000000000766666666666666d7666666d07cccccccccccc607cc7ccc67c7cc7cc7cccccc67cccccccccccccc67cccccc6
 00000000000000000000000000000000000000000dddddddddddddd00dddddd00066666666666600066666600666666666666660066666666666666006666660
 00000000000000000000000102000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000030000000500000050305000203003001111111111111100077777777777700077777700777777777777770077777777777777007777770
@@ -1024,7 +1021,7 @@ __label__
 88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888
 
 __gff__
-000000000000000041810341814181030000000000418103418103418141810300000000010100004181034181418103000000000101000041810341814181030000000000000000ff000505050505050000000000ffff0001011525050505050000000000000000000005050505000000000000000000000000050505050000
+000000000000000041810341814181030001000000418103418103418141810300010000010100004181034181418103000000000101000041810341814181030000000000000000ff000505050505050000000000ffff0001011525050505050000000000000000000005050505000000000000000000000000050505050000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __map__
 000000000000000000000000000000001f1d1e1f00001f1f00001f1d1e1f002f2f0000000000001f1f6a6b1f00000000000d0e0d0e00000000000000000000000f0f000000000000001700002a000000173f3f001700000f000000000000000000000f0000002d2e2f000000001f1f1f00000000000018190000000000000000

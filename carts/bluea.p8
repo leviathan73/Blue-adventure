@@ -1,6 +1,8 @@
 pico-8 cartridge // http://www.pico-8.com
 version 16
 __lua__
+--vscode-fold=1
+--#reg ideas
 --[[
 	latajacy dywan
 	wstep ze startreka
@@ -11,15 +13,10 @@ __lua__
 	smieszne irracjonalne plansze
 	kody do poziomow
 ]]
-
-intro = 0
-start = 1
-game = 2
-gend = 3
-credits = 4
-
+--#ereg
+--#reg pico8 game loop
 function _init()
-	stage.goto(intro)
+	stage:load(intro)
 end
 function _update60()
 	if(stage:is(intro)) intro:update()
@@ -35,11 +32,17 @@ function _draw()
 	if(stage:is(gend)) _draw_endgame()
 	if(stage:is(credits)) _update_credits()
 end
-
+--#ereg
+--#reg stages helper
+intro = 0
+start = 1
+game = 2
+gend = 3
+credits = 4
 stage = {
 	active=1
 }
-function stage:goto(stg)
+function stage:load(stg)
 	self.stage = stg
 	if(self.stage==2) game:init(0)
 	if(self.stage==0) intro:init()
@@ -47,7 +50,8 @@ end
 function stage:is(stg)
 	retuen strg==self.activated
 end
-
+--#ereg
+--#reg intro stage
 intro = {
 	tlines = {
 	"space: the final frontier.",
@@ -86,7 +90,6 @@ function intro:draw()
 	stars:draw()
  	intro:drawfgr() 
 end
-
 stars = {
 	frame = 0,
 	density = 3
@@ -138,7 +141,8 @@ function clone(obj)
  	end
   	return tcopy 
 end
-
+--#ereg
+--#reg aiming
 aiming = {
 	ax = 0,
 	ay = 0,
@@ -184,7 +188,8 @@ function aiming:draw(px,py)
 		spr(119,sx,sy,1,1)
 	end
 end
-
+--#ereg
+--#reg powerups
 powerups = {
 	aiming = true,
 	inkshot = true,
@@ -204,7 +209,8 @@ function powerups:drawstate()
 	if (self.fireshot) spr(ic+3,sx+24,3,1,1)  
 	if (self.glue) spr(ic+4,sx+32,3,1,1)  
 end
-
+--#ereg
+--#reg game stage
 game = {
 	level = 0,
 	score = 0
@@ -214,7 +220,6 @@ mtime = 0
 sdir = 1
 hflip = false
 tno = 0
-
 function game:init(lvl)
 	self.level = lvl
 	aiming:reset()
@@ -222,7 +227,6 @@ function game:init(lvl)
 	player:reset()
 	prep_lev()
 end
-
 function game:update()
 	
 	tno+=1
@@ -255,7 +259,8 @@ function game:update()
 	shots:logic()
 	mballs:logic()
 end
-
+--#ereg
+--#reg ball
 ball = {
 	x=0,
 	y=0,
@@ -294,7 +299,8 @@ function ball:logic()
 		self:move()
 	end
 end
-
+--#ereg
+--#reg player
 player = {
 	x=6*8,
 	y=15*8,
@@ -339,17 +345,19 @@ function player:logic()
 		if(xpa<102) xpa+=2 
 	end
 end
-
+--#ereg
+--#reg game board
 board = {}
 board.maxx = 13
 board.maxy = 8
 board.tiles = 0
+--#ereg
 
 function prep_lev(level)
 
+-- TODO:
 shots:init()
 balls:init()  
-
 board.tiles = 0
 sitcky = true
 map(0,0)
@@ -444,7 +452,6 @@ function map_col()
  	end
 end
 
----------
 sqrt2 = sqrt(2)
 function player_col()
 	if dy>0 and y>115 then 

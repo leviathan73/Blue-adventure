@@ -9,15 +9,15 @@
 
 // :: Video Settings
 
-window_size 640 640 // window width, height
-screen_size 640 640 // screen width, height (stretched to window) 
+window_size 512 512 // window width, height
+screen_size 512 512 // screen width, height (stretched to window) 
 show_fps 0 // Draw frames per second in the corner
 
 
 // :: Window Settings
 
 windowed 1 // 1 to start up in windowed mode
-window_position 1200 50 // x and y position of window, or -1, -1 to let the window manager decide
+window_position 800 50 // x and y position of window, or -1, -1 to let the window manager decide
 frameless 0 // 1 to use a window with no frame
 fullscreen_method 1 // 0 maximized window (linux)  1 borderless desktop-sized window  2 fullscreen
 
@@ -28,7 +28,7 @@ foreground_sleep_ms 5 // number of milliseconds to sleep each frame. Try 10 to c
 
 background_sleep_ms 20 // number of milliseconds to sleep each frame when running in the background
 
-sessions 218 // number of times program has been run
+sessions 330 // number of times program has been run
 
 // (scancode) hold this key down and left-click to simulate right-click
 rmb_key 0 // 0 for none  226 for LALT
@@ -37,7 +37,7 @@ rmb_key 0 // 0 for none  226 for LALT
 emulate_textinput 0 
 
 // Desktop for saving screenshots etc. Defaults to $HOME/Desktop
-desktop_path c:/Users/rodzice/Google Drive/pico-8/
+desktop_path c:/Users/bozena/Google Drive/pico-8/
 
 
 
@@ -54,11 +54,11 @@ version 0.1.11g
 
 
 // Location of pico-8's root folder
-root_path c:/Users/rodzice/Google Drive/pico-8/carts/
+root_path c:/Users/bozena/Google Drive/pico-8/carts/
 
 
 // Location of cartridge save data
-cdata_path c:/Users/rodzice/Google Drive/pico-8/cdata/
+cdata_path c:/Users/bozena/Google Drive/pico-8/cdata/
 
 
 // Specify which player index joystick control begins at (0..7)
@@ -75,7 +75,7 @@ live_notes 0
 cursor_snap 0
 
 // maximum length of gif in seconds (1..120, default 8)
-gif_len 8
+gif_len 60
 
 // 0 classic  1 dark blue background in code editor
 gui_theme 0
